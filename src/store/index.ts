@@ -531,6 +531,7 @@ interface StoreState {
   deleteSeedingCrop: (id: string) => void;
   getSeedingReminders: () => SeedingReminder[];
   dismissReminder: (reminderId: string) => void;
+  clearDismissedReminders: () => void;
 
   updateSettings: (settings: Partial<AppSettings>) => void;
   refreshStatuses: () => void;
@@ -728,6 +729,10 @@ export const useStore = create<StoreState>()(
         set((state) => ({
           dismissedReminders: [...state.dismissedReminders, reminderId],
         }));
+      },
+
+      clearDismissedReminders: () => {
+        set({ dismissedReminders: [] });
       },
 
       updateSettings: (newSettings) => {

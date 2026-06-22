@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '@/store';
-import { Calendar, Bell, Sprout, Plus, X as XIcon, AlertCircle, CheckCircle, Clock, Info, Trash2, Edit2, Leaf, Droplets, Sun } from 'lucide-react';
+import { Calendar, Bell, Sprout, Plus, X as XIcon, AlertCircle, CheckCircle, Clock, Info, Trash2, Edit2, Leaf, Droplets, Sun, RefreshCcw } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import type { SeedingCrop } from '@/types';
@@ -12,14 +12,19 @@ export default function SeedingCalendar() {
   const addSeedingCrop = useStore((s) => s.addSeedingCrop);
   const updateSeedingCrop = useStore((s) => s.updateSeedingCrop);
   const deleteSeedingCrop = useStore((s) => s.deleteSeedingCrop);
+  const updateSettings = useStore((s) => s.updateSettings);
   const seeds = useStore((s) => s.seeds);
   const settings = useStore((s) => s.settings);
+  const dismissedReminders = useStore((s) => s.dismissedReminders);
+  const clearDismissedReminders = useStore((s) => s.clearDismissedReminders);
 
   const [activeTab, setActiveTab] = useState<'calendar' | 'reminders' | 'crops'>('calendar');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showAddCrop, setShowAddCrop] = useState(false);
   const [editingCropId, setEditingCropId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showReminderSettings, setShowReminderSettings] = useState(false);
+  const [tempReminderDays, setTempReminderDays] = useState(settings.seedingReminderDays);
 
   const [cropForm, setCropForm] = useState({
     name: '',
@@ -387,10 +392,19 @@ export default function SeedingCalendar() {
       {activeTab === 'reminders' && (
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-2 bg-white rounded-xl border border-surface-200 p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-surface-900 mb-4 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-gold-500" />
-              备种提醒列表
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-surface-900 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-gold-500" />
+                备种提醒列表
+              </h3>
+              <button
+                onClick={() => setShowAddCrop(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                新增作物提醒
+              </button>
+            </div>
             {reminders.length === 0 ? (
               <div className="text-center py-16 text-surface-400">
                 <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
@@ -512,15 +526,82 @@ export default function SeedingCalendar() {
             <div className="bg-white rounded-xl border border-surface-200 p-4 shadow-sm">
               <h3 className="text-sm font-semibold text-surface-700 mb-3">提醒设置</h3>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-surface-600">提前提醒天数</span>
-                  <span className="text-sm font-medium text-primary-600">{settings.seedingReminderDays}天</span>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-surface-600">提前提醒天数</span>
+                    {!showReminderSettings ? (
+                      <button
+                        onClick={() => {
+                          setTempReminderDays(settings.seedingReminderDays);
+                          setShowReminderSettings(true);
+                        }}
+                        className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                      >
+                        编辑
+                      </button>
+                    ) : null}
+                  </div>
+                  {!showReminderSettings ? (
+                    <span className="text-lg font-bold text-primary-600">{settings.seedingReminderDays}天</span>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min="1"
+                          max="60"
+                          value={tempReminderDays}
+                          onChange={(e) => setTempReminderDays(Number(e.target.value))}
+                          className="flex-1 h-2 bg-surface-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                        />
+                        <input
+                          type="number"
+                          min="1"
+                          max="60"
+                          value={tempReminderDays}
+                          onChange={(e) => setTempReminderDays(Math.min(60, Math.max(1, Number(e.target.value))))}
+                          className="w-16 px-2 py-1 border border-surface-200 rounded-lg text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                        <span className="text-sm text-surface-500">天</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            updateSettings({ seedingReminderDays: tempReminderDays });
+                            setShowReminderSettings(false);
+                          }}
+                          className="flex-1 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition-colors"
+                        >
+                          保存
+                        </button>
+                        <button
+                          onClick={() => setShowReminderSettings(false)}
+                          className="flex-1 px-3 py-1.5 border border-surface-300 text-surface-600 rounded-lg text-xs font-medium hover:bg-surface-50 transition-colors"
+                        >
+                          取消
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-surface-600">已忽略提醒</span>
-                  <span className="text-sm font-medium text-surface-500">
-                    {useStore.getState().dismissedReminders.length}条
-                  </span>
+                <div className="pt-3 border-t border-surface-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <span className="text-sm text-surface-600">已忽略提醒</span>
+                      <span className="text-sm font-medium text-surface-500 ml-2">
+                        {dismissedReminders.length}条
+                      </span>
+                    </div>
+                    {dismissedReminders.length > 0 && (
+                      <button
+                        onClick={() => clearDismissedReminders()}
+                        className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 font-medium"
+                      >
+                        <RefreshCcw className="w-3 h-3" />
+                        重置
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
