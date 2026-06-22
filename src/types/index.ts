@@ -128,11 +128,47 @@ export interface SeedingReminder {
   isActive: boolean;
 }
 
+export interface CollectionNotice {
+  id: string;
+  creditRecordId: string;
+  farmerId: string;
+  farmerName: string;
+  farmerPhone: string;
+  amount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  expectedPayDate: string;
+  noticeDate: string;
+  daysUntilDue: number;
+  status: 'pending' | 'in_progress' | 'resolved' | 'overdue';
+  urgency: 'normal' | 'urgent' | 'critical';
+  createdAt: string;
+}
+
+export interface CollectionRecord {
+  id: string;
+  collectionNoticeId: string;
+  creditRecordId: string;
+  farmerId: string;
+  method: 'phone' | 'visit' | 'sms' | 'wechat' | 'other';
+  result: 'pending' | 'promised' | 'partial_paid' | 'paid' | 'refused' | 'unreachable';
+  contactPerson: string;
+  contactPhone: string;
+  promisedPayDate?: string;
+  promisedAmount?: number;
+  notes: string;
+  createdAt: string;
+  createdBy: string;
+}
+
 export interface AppSettings {
   warningDays: number;
   autoBanExpired: boolean;
   restrictedPesticides: string[];
   seedingReminderDays: number;
+  collectionReminderDays: number;
 }
 
 export type ProductStatus = 'normal' | 'warning' | 'expired';
+export type CollectionMethod = 'phone' | 'visit' | 'sms' | 'wechat' | 'other';
+export type CollectionResult = 'pending' | 'promised' | 'partial_paid' | 'paid' | 'refused' | 'unreachable';

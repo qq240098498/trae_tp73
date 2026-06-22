@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Sprout, FlaskConical, ShoppingCart, Users, ClipboardCheck, Settings, Leaf, Calendar } from 'lucide-react';
+import { LayoutDashboard, Sprout, FlaskConical, ShoppingCart, Users, ClipboardCheck, Settings, Leaf, Calendar, AlertTriangle } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: '仪表盘', icon: LayoutDashboard },
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/seeding-calendar', label: '播种日历', icon: Calendar },
   { to: '/sales', label: '销售出库', icon: ShoppingCart },
   { to: '/credit', label: '农户赊账', icon: Users },
+  { to: '/collection', label: '赊账催收', icon: AlertTriangle },
   { to: '/registration', label: '实名登记', icon: ClipboardCheck },
   { to: '/settings', label: '系统设置', icon: Settings },
 ];

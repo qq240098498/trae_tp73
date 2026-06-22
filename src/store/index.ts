@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Seed, Chemical, Farmer, SaleOrder, SaleItem, CreditRecord, PesticideRegistration, AppSettings, SeedingCrop, SeedingReminder } from '@/types';
+import type { Seed, Chemical, Farmer, SaleOrder, SaleItem, CreditRecord, PesticideRegistration, AppSettings, SeedingCrop, SeedingReminder, CollectionNotice, CollectionRecord, CollectionMethod, CollectionResult } from '@/types';
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
@@ -176,9 +176,9 @@ const mockChemicals: Chemical[] = [
 ];
 
 const mockFarmers: Farmer[] = [
-  { id: 'farmer-001', name: '张三', phone: '13812345678', address: '东阳村3组', idCard: '330724197001011234', totalDebt: 0, creditRating: 'A', createdAt: '2025-01-01T08:00:00.000Z' },
-  { id: 'farmer-002', name: '李四', phone: '13987654321', address: '西平村5组', idCard: '330724197505052345', totalDebt: 0, creditRating: 'B', createdAt: '2025-02-15T08:00:00.000Z' },
-  { id: 'farmer-003', name: '王五', phone: '15012349876', address: '南阳村1组', idCard: '330724198203033456', totalDebt: 0, creditRating: 'A', createdAt: '2025-03-20T08:00:00.000Z' },
+  { id: 'farmer-001', name: '张三', phone: '13812345678', address: '东阳村3组', idCard: '330724197001011234', totalDebt: 1250, creditRating: 'A', createdAt: '2025-01-01T08:00:00.000Z' },
+  { id: 'farmer-002', name: '李四', phone: '13987654321', address: '西平村5组', idCard: '330724197505052345', totalDebt: 400, creditRating: 'B', createdAt: '2025-02-15T08:00:00.000Z' },
+  { id: 'farmer-003', name: '王五', phone: '15012349876', address: '南阳村1组', idCard: '330724198203033456', totalDebt: 5540, creditRating: 'A', createdAt: '2025-03-20T08:00:00.000Z' },
 ];
 
 const mockSaleOrders: SaleOrder[] = [
@@ -222,11 +222,27 @@ const mockSaleOrders: SaleOrder[] = [
     status: 'credited',
     createdAt: '2025-06-10T10:15:00.000Z',
   },
+  {
+    id: 'order-004',
+    orderNumber: 'NZ20260315004',
+    saleDate: '2026-03-15T09:00:00.000Z',
+    items: [
+      { id: 'si-006', productType: 'seed', productId: 'seed-004', productName: '棉花种子 中棉所49', quantity: 20, unitPrice: 62, subtotal: 1240 },
+      { id: 'si-007', productType: 'chemical', productId: 'chem-001', productName: '草甘膦异丙胺盐水剂', quantity: 100, unitPrice: 18, subtotal: 1800 },
+      { id: 'si-008', productType: 'chemical', productId: 'chem-003', productName: '尿素', quantity: 1000, unitPrice: 2.5, subtotal: 2500 },
+    ],
+    totalAmount: 5540,
+    paymentMethod: 'credit',
+    farmerId: 'farmer-003',
+    status: 'credited',
+    createdAt: '2026-03-15T09:00:00.000Z',
+  },
 ];
 
 const mockCreditRecords: CreditRecord[] = [
-  { id: 'credit-001', farmerId: 'farmer-001', orderId: 'order-002', amount: 1705, paidAmount: 455, status: 'partial', expectedPayDate: '2025-10-15', createdAt: '2025-06-05T14:20:00.000Z' },
-  { id: 'credit-002', farmerId: 'farmer-002', orderId: 'order-003', amount: 400, paidAmount: 0, status: 'unpaid', expectedPayDate: '2025-10-15', createdAt: '2025-06-10T10:15:00.000Z' },
+  { id: 'credit-001', farmerId: 'farmer-001', orderId: 'order-002', amount: 1705, paidAmount: 455, status: 'partial', expectedPayDate: '2026-07-15', createdAt: '2025-06-05T14:20:00.000Z' },
+  { id: 'credit-002', farmerId: 'farmer-002', orderId: 'order-003', amount: 400, paidAmount: 0, status: 'unpaid', expectedPayDate: '2026-10-15', createdAt: '2025-06-10T10:15:00.000Z' },
+  { id: 'credit-003', farmerId: 'farmer-003', orderId: 'order-004', amount: 5540, paidAmount: 0, status: 'unpaid', expectedPayDate: '2026-06-25', createdAt: '2026-03-15T09:00:00.000Z' },
 ];
 
 const mockRegistrations: PesticideRegistration[] = [
@@ -510,6 +526,69 @@ export function computeSeedingReminders(crops: SeedingCrop[], reminderDays: numb
   });
 }
 
+function computeCollectionNotices(
+  creditRecords: CreditRecord[],
+  farmers: Farmer[],
+  reminderDays: number
+): CollectionNotice[] {
+  const now = new Date();
+  const notices: CollectionNotice[] = [];
+
+  for (const credit of creditRecords) {
+    if (credit.status === 'paid') continue;
+
+    const farmer = farmers.find((f) => f.id === credit.farmerId);
+    if (!farmer) continue;
+
+    const expectedDate = new Date(credit.expectedPayDate);
+    const diffTime = expectedDate.getTime() - now.getTime();
+    const daysUntilDue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const remainingAmount = credit.amount - credit.paidAmount;
+
+    if (daysUntilDue <= reminderDays) {
+      let urgency: CollectionNotice['urgency'] = 'normal';
+      let status: CollectionNotice['status'] = 'pending';
+
+      if (daysUntilDue <= 0) {
+        urgency = 'critical';
+        status = 'overdue';
+      } else if (daysUntilDue <= 7) {
+        urgency = 'urgent';
+        status = 'in_progress';
+      } else if (daysUntilDue <= 15) {
+        urgency = 'urgent';
+      }
+
+      const notice: CollectionNotice = {
+        id: `collection-${credit.id}`,
+        creditRecordId: credit.id,
+        farmerId: farmer.id,
+        farmerName: farmer.name,
+        farmerPhone: farmer.phone,
+        amount: credit.amount,
+        paidAmount: credit.paidAmount,
+        remainingAmount,
+        expectedPayDate: credit.expectedPayDate,
+        noticeDate: now.toISOString(),
+        daysUntilDue,
+        status,
+        urgency,
+        createdAt: now.toISOString(),
+      };
+
+      notices.push(notice);
+    }
+  }
+
+  return notices.sort((a, b) => {
+    const urgencyOrder = { critical: 0, urgent: 1, normal: 2 };
+    if (urgencyOrder[a.urgency] !== urgencyOrder[b.urgency]) {
+      return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+    }
+    return a.daysUntilDue - b.daysUntilDue;
+  });
+}
+
 interface StoreState {
   seeds: Seed[];
   chemicals: Chemical[];
@@ -518,6 +597,7 @@ interface StoreState {
   creditRecords: CreditRecord[];
   pesticideRegistrations: PesticideRegistration[];
   seedingCrops: SeedingCrop[];
+  collectionRecords: CollectionRecord[];
   dismissedReminders: string[];
   settings: AppSettings;
 
@@ -544,9 +624,16 @@ interface StoreState {
   dismissReminder: (reminderId: string) => void;
   clearDismissedReminders: () => void;
 
+  getCollectionNotices: () => CollectionNotice[];
+  addCollectionRecord: (record: Omit<CollectionRecord, 'id' | 'createdAt' | 'createdBy'>) => void;
+  getCollectionRecords: (noticeId?: string) => CollectionRecord[];
+  updateCollectionNoticeStatus: (noticeId: string, status: CollectionNotice['status']) => void;
+
   updateSettings: (settings: Partial<AppSettings>) => void;
   refreshStatuses: () => void;
 }
+
+const mockCollectionRecords: CollectionRecord[] = [];
 
 export const useStore = create<StoreState>()(
   persist(
@@ -558,12 +645,14 @@ export const useStore = create<StoreState>()(
       creditRecords: mockCreditRecords,
       pesticideRegistrations: mockRegistrations,
       seedingCrops: mockSeedingCrops,
+      collectionRecords: mockCollectionRecords,
       dismissedReminders: [],
       settings: {
         warningDays: 30,
         autoBanExpired: true,
         restrictedPesticides: ['百草枯', '毒死蜱', '甲胺磷', '对硫磷', '甲基对硫磷'],
         seedingReminderDays: 15,
+        collectionReminderDays: 30,
       },
 
       addSeed: (seed) => {
@@ -744,6 +833,46 @@ export const useStore = create<StoreState>()(
 
       clearDismissedReminders: () => {
         set({ dismissedReminders: [] });
+      },
+
+      getCollectionNotices: () => {
+        const { creditRecords, farmers, settings } = get();
+        return computeCollectionNotices(creditRecords, farmers, settings.collectionReminderDays);
+      },
+
+      addCollectionRecord: (record) => {
+        const newRecord: CollectionRecord = {
+          ...record,
+          id: generateId(),
+          createdAt: new Date().toISOString(),
+          createdBy: '管理员',
+        };
+        set((state) => ({
+          collectionRecords: [...state.collectionRecords, newRecord],
+        }));
+      },
+
+      getCollectionRecords: (noticeId) => {
+        const { collectionRecords } = get();
+        if (noticeId) {
+          return collectionRecords.filter((r) => r.collectionNoticeId === noticeId);
+        }
+        return collectionRecords;
+      },
+
+      updateCollectionNoticeStatus: (noticeId, status) => {
+        const { creditRecords } = get();
+        const creditId = noticeId.replace('collection-', '');
+        const credit = creditRecords.find((c) => c.id === creditId);
+        if (!credit) return;
+
+        if (status === 'resolved') {
+          set((state) => ({
+            creditRecords: state.creditRecords.map((c) =>
+              c.id === creditId ? { ...c, status: 'paid', actualPayDate: new Date().toISOString() } : c
+            ),
+          }));
+        }
       },
 
       updateSettings: (newSettings) => {
