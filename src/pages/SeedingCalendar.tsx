@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '@/store';
+import { computeSeedingReminders } from '@/store';
 import { Calendar, Bell, Sprout, Plus, X as XIcon, AlertCircle, CheckCircle, Clock, Info, Trash2, Edit2, Leaf, Droplets, Sun, RefreshCcw } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -7,7 +8,6 @@ import type { SeedingCrop } from '@/types';
 
 export default function SeedingCalendar() {
   const seedingCrops = useStore((s) => s.seedingCrops);
-  const getSeedingReminders = useStore((s) => s.getSeedingReminders);
   const dismissReminder = useStore((s) => s.dismissReminder);
   const addSeedingCrop = useStore((s) => s.addSeedingCrop);
   const updateSeedingCrop = useStore((s) => s.updateSeedingCrop);
@@ -41,8 +41,15 @@ export default function SeedingCalendar() {
     region: '华中地区',
   });
 
-  const reminders = useMemo(() => getSeedingReminders(), [getSeedingReminders]);
-  const activeReminders = reminders.filter((r) => r.isActive && r.daysUntilSowing >= 0);
+  const reminders = useMemo(
+    () => computeSeedingReminders(seedingCrops, settings.seedingReminderDays)
+      .filter((r) => !dismissedReminders.includes(r.id)),
+    [seedingCrops, settings.seedingReminderDays, dismissedReminders]
+  );
+  const activeReminders = useMemo(
+    () => reminders.filter((r) => r.isActive && r.daysUntilSowing >= 0),
+    [reminders]
+  );
 
   const categories = useMemo(() => {
     const cats = [...new Set(seedingCrops.map((c) => c.category))];

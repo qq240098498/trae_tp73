@@ -456,7 +456,7 @@ function getSowingDateForYear(month: number, day: number, year: number): Date {
   return new Date(year, month - 1, day);
 }
 
-function computeSeedingReminders(crops: SeedingCrop[], reminderDays: number): SeedingReminder[] {
+export function computeSeedingReminders(crops: SeedingCrop[], reminderDays: number): SeedingReminder[] {
   const now = new Date();
   const currentYear = now.getFullYear();
   const reminders: SeedingReminder[] = [];
@@ -496,7 +496,18 @@ function computeSeedingReminders(crops: SeedingCrop[], reminderDays: number): Se
     }
   }
 
-  return reminders.sort((a, b) => a.daysUntilSowing - b.daysUntilSowing);
+  return reminders.sort((a, b) => {
+    const getUrgency = (days: number) => {
+      if (days > 0 && days <= 7) return 0;
+      if (days > 0 && days <= 15) return 1;
+      if (days <= 0) return 2;
+      return 3;
+    };
+    const ua = getUrgency(a.daysUntilSowing);
+    const ub = getUrgency(b.daysUntilSowing);
+    if (ua !== ub) return ua - ub;
+    return a.daysUntilSowing - b.daysUntilSowing;
+  });
 }
 
 interface StoreState {

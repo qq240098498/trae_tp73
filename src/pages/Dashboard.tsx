@@ -1,4 +1,5 @@
 import { useStore } from '@/store';
+import { computeSeedingReminders } from '@/store';
 import { format, subDays, isAfter } from 'date-fns';
 import { TrendingUp, ShoppingCart, AlertTriangle, Users, Sprout, DollarSign, ArrowRight, ClipboardCheck, Bell, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -11,8 +12,10 @@ export default function Dashboard() {
   const farmers = useStore((s) => s.farmers);
   const saleOrders = useStore((s) => s.saleOrders);
   const creditRecords = useStore((s) => s.creditRecords);
-  const getSeedingReminders = useStore((s) => s.getSeedingReminders);
   const dismissReminder = useStore((s) => s.dismissReminder);
+  const seedingCrops = useStore((s) => s.seedingCrops);
+  const settings = useStore((s) => s.settings);
+  const dismissedReminders = useStore((s) => s.dismissedReminders);
 
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
@@ -49,7 +52,9 @@ export default function Dashboard() {
   const debtPaid = creditRecords.filter((r) => r.status === 'paid').reduce((sum, r) => sum + r.paidAmount, 0);
   const debtUnpaid = creditRecords.filter((r) => r.status !== 'paid').reduce((sum, r) => sum + (r.amount - r.paidAmount), 0);
 
-  const seedingReminders = getSeedingReminders().filter((r) => r.isActive && r.daysUntilSowing >= 0);
+  const seedingReminders = computeSeedingReminders(seedingCrops, settings.seedingReminderDays)
+    .filter((r) => !dismissedReminders.includes(r.id))
+    .filter((r) => r.isActive && r.daysUntilSowing >= 0);
 
   const pieData = [
     { name: '已收回', value: debtPaid, color: '#2E7D32' },
