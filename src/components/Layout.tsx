@@ -1,10 +1,11 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Sprout, FlaskConical, ShoppingCart, Users, ClipboardCheck, Settings, Leaf } from 'lucide-react';
+import { LayoutDashboard, Sprout, FlaskConical, ShoppingCart, Users, ClipboardCheck, Settings, Leaf, Calendar } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: '仪表盘', icon: LayoutDashboard },
   { to: '/seeds', label: '种子库存', icon: Sprout },
   { to: '/chemicals', label: '化肥农药', icon: FlaskConical },
+  { to: '/seeding-calendar', label: '播种日历', icon: Calendar },
   { to: '/sales', label: '销售出库', icon: ShoppingCart },
   { to: '/credit', label: '农户赊账', icon: Users },
   { to: '/registration', label: '实名登记', icon: ClipboardCheck },

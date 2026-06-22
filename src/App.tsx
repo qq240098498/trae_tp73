@@ -7,6 +7,7 @@ import Sales from '@/pages/Sales';
 import Credit from '@/pages/Credit';
 import Registration from '@/pages/Registration';
 import Settings from '@/pages/Settings';
+import SeedingCalendar from '@/pages/SeedingCalendar';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/seeds" element={<Seeds />} />
           <Route path="/chemicals" element={<Chemicals />} />
+          <Route path="/seeding-calendar" element={<SeedingCalendar />} />
           <Route path="/sales" element={<Sales />} />
           <Route path="/credit" element={<Credit />} />
           <Route path="/registration" element={<Registration />} />

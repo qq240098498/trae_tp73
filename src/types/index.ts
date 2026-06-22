@@ -89,10 +89,50 @@ export interface PesticideRegistration {
   registrationDate: string;
 }
 
+export interface SeedingCrop {
+  id: string;
+  name: string;
+  category: string;
+  sowingStartMonth: number;
+  sowingStartDay: number;
+  sowingEndMonth: number;
+  sowingEndDay: number;
+  recommendedVarieties: {
+    name: string;
+    seedId?: string;
+    description: string;
+  }[];
+  usagePerMu: number;
+  usageUnit: string;
+  growingPeriod: string;
+  notes: string;
+  region: string;
+}
+
+export interface SeedingReminder {
+  id: string;
+  cropId: string;
+  cropName: string;
+  reminderDate: string;
+  sowingStartDate: string;
+  sowingEndDate: string;
+  daysUntilSowing: number;
+  recommendedVarieties: {
+    name: string;
+    seedId?: string;
+    description: string;
+  }[];
+  usagePerMu: number;
+  usageUnit: string;
+  notes: string;
+  isActive: boolean;
+}
+
 export interface AppSettings {
   warningDays: number;
   autoBanExpired: boolean;
   restrictedPesticides: string[];
+  seedingReminderDays: number;
 }
 
 export type ProductStatus = 'normal' | 'warning' | 'expired';

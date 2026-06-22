@@ -1,6 +1,6 @@
 import { useStore } from '@/store';
 import { format, subDays, isAfter } from 'date-fns';
-import { TrendingUp, ShoppingCart, AlertTriangle, Users, Sprout, FlaskConical, DollarSign, ArrowRight, ClipboardCheck } from 'lucide-react';
+import { TrendingUp, ShoppingCart, AlertTriangle, Users, Sprout, DollarSign, ArrowRight, ClipboardCheck, Bell, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { getFarmerTotalDebt } from '@/lib/utils';
@@ -11,7 +11,8 @@ export default function Dashboard() {
   const farmers = useStore((s) => s.farmers);
   const saleOrders = useStore((s) => s.saleOrders);
   const creditRecords = useStore((s) => s.creditRecords);
-  const settings = useStore((s) => s.settings);
+  const getSeedingReminders = useStore((s) => s.getSeedingReminders);
+  const dismissReminder = useStore((s) => s.dismissReminder);
 
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
@@ -38,17 +39,17 @@ export default function Dashboard() {
 
   const expiredItems = [...seeds.filter((s) => s.status === 'expired'), ...chemicals.filter((c) => c.status === 'expired')];
   const warningItems = [...seeds.filter((s) => s.status === 'warning'), ...chemicals.filter((c) => c.status === 'warning')];
-  const lowStockItems = [...seeds.filter((s) => s.stockQuantity < 20), ...chemicals.filter((c) => c.stockQuantity < 20)];
 
   const expiredAlertItems = expiredItems.map((item) => ({ id: item.id, name: item.name, detail: item.expiryDate, type: 'expired' as const }));
   const warningAlertItems = warningItems.map((item) => ({ id: item.id, name: item.name, detail: item.expiryDate, type: 'warning' as const }));
 
   const totalDebt = farmers.reduce((sum, f) => sum + getFarmerTotalDebt(f.id, creditRecords), 0);
-  const unpaidRecords = creditRecords.filter((r) => r.status !== 'paid');
   const overdueRecords = creditRecords.filter((r) => r.status !== 'paid' && isAfter(today, new Date(r.expectedPayDate)));
 
   const debtPaid = creditRecords.filter((r) => r.status === 'paid').reduce((sum, r) => sum + r.paidAmount, 0);
   const debtUnpaid = creditRecords.filter((r) => r.status !== 'paid').reduce((sum, r) => sum + (r.amount - r.paidAmount), 0);
+
+  const seedingReminders = getSeedingReminders().filter((r) => r.isActive && r.daysUntilSowing >= 0);
 
   const pieData = [
     { name: '已收回', value: debtPaid, color: '#2E7D32' },
@@ -114,7 +115,21 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
+        <AlertSection
+          title="备种提醒"
+          items={seedingReminders.map((r) => ({
+            id: r.id,
+            name: r.cropName,
+            detail: `${r.daysUntilSowing > 0 ? `${r.daysUntilSowing}天后播种` : '播种中'}`,
+            type: 'seeding' as const,
+            onDismiss: () => dismissReminder(r.id),
+          }))}
+          icon={Bell}
+          color="amber"
+          linkTo="/seeding-calendar"
+        />
+
         <AlertSection
           title="过期禁售"
           items={expiredAlertItems}
@@ -145,7 +160,8 @@ export default function Dashboard() {
 
       <div className="bg-white rounded-xl border border-surface-200 p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-surface-700 mb-4">快捷操作</h3>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-5 gap-3">
+          <QuickAction to="/seeding-calendar" icon={Calendar} label="播种日历" color="green" />
           <QuickAction to="/sales" icon={ShoppingCart} label="新建销售" color="green" />
           <QuickAction to="/seeds" icon={Sprout} label="种子入库" color="amber" />
           <QuickAction to="/credit" icon={Users} label="赊账结账" color="blue" />
@@ -185,7 +201,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: typeof DollarSign
   );
 }
 
-function AlertSection({ title, items, icon: Icon, color, linkTo }: { title: string; items: { id: string; name: string; detail: string; type: string }[]; icon: typeof AlertTriangle; color: string; linkTo: string }) {
+function AlertSection({ title, items, icon: Icon, color, linkTo }: { title: string; items: { id: string; name: string; detail: string; type: string; onDismiss?: () => void }[]; icon: typeof AlertTriangle; color: string; linkTo: string }) {
   const borderColor = color === 'red' ? 'border-red-200' : 'border-gold-200';
   const bgColor = color === 'red' ? 'bg-red-50' : 'bg-gold-50';
   const textColor = color === 'red' ? 'text-red-700' : 'text-gold-700';
@@ -205,9 +221,23 @@ function AlertSection({ title, items, icon: Icon, color, linkTo }: { title: stri
       ) : (
         <div className="space-y-2 max-h-36 overflow-y-auto">
           {items.slice(0, 5).map((item) => (
-            <div key={item.id} className={`flex items-center justify-between px-3 py-2 rounded-lg ${bgColor}`}>
-              <span className={`text-xs font-medium ${textColor}`}>{item.name}</span>
-              <span className="text-xs text-surface-500 font-mono">{item.detail}</span>
+            <div key={item.id} className={`flex items-center justify-between px-3 py-2 rounded-lg ${bgColor} group`}>
+              <div className="flex items-center justify-between flex-1">
+                <span className={`text-xs font-medium ${textColor}`}>{item.name}</span>
+                <span className="text-xs text-surface-500 font-mono">{item.detail}</span>
+              </div>
+              {item.onDismiss && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    item.onDismiss?.();
+                  }}
+                  className="ml-2 opacity-0 group-hover:opacity-100 text-surface-400 hover:text-surface-600 transition-opacity"
+                >
+                  <span className="text-xs">×</span>
+                </button>
+              )}
             </div>
           ))}
         </div>
