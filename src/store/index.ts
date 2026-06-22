@@ -176,8 +176,8 @@ const mockChemicals: Chemical[] = [
 ];
 
 const mockFarmers: Farmer[] = [
-  { id: 'farmer-001', name: '张三', phone: '13812345678', address: '东阳村3组', idCard: '330724197001011234', totalDebt: 1250, creditRating: 'A', createdAt: '2025-01-01T08:00:00.000Z' },
-  { id: 'farmer-002', name: '李四', phone: '13987654321', address: '西平村5组', idCard: '330724197505052345', totalDebt: 560, creditRating: 'B', createdAt: '2025-02-15T08:00:00.000Z' },
+  { id: 'farmer-001', name: '张三', phone: '13812345678', address: '东阳村3组', idCard: '330724197001011234', totalDebt: 0, creditRating: 'A', createdAt: '2025-01-01T08:00:00.000Z' },
+  { id: 'farmer-002', name: '李四', phone: '13987654321', address: '西平村5组', idCard: '330724197505052345', totalDebt: 0, creditRating: 'B', createdAt: '2025-02-15T08:00:00.000Z' },
   { id: 'farmer-003', name: '王五', phone: '15012349876', address: '南阳村1组', idCard: '330724198203033456', totalDebt: 0, creditRating: 'A', createdAt: '2025-03-20T08:00:00.000Z' },
 ];
 

@@ -1,11 +1,17 @@
 import { useStore } from '@/store';
-import { format, subDays, isAfter, isBefore, addDays } from 'date-fns';
-import { TrendingUp, ShoppingCart, AlertTriangle, Users, Sprout, FlaskConical, DollarSign, ArrowRight } from 'lucide-react';
+import { format, subDays, isAfter } from 'date-fns';
+import { TrendingUp, ShoppingCart, AlertTriangle, Users, Sprout, FlaskConical, DollarSign, ArrowRight, ClipboardCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { getFarmerTotalDebt } from '@/lib/utils';
 
 export default function Dashboard() {
-  const { seeds, chemicals, farmers, saleOrders, creditRecords, settings } = useStore();
+  const seeds = useStore((s) => s.seeds);
+  const chemicals = useStore((s) => s.chemicals);
+  const farmers = useStore((s) => s.farmers);
+  const saleOrders = useStore((s) => s.saleOrders);
+  const creditRecords = useStore((s) => s.creditRecords);
+  const settings = useStore((s) => s.settings);
 
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
@@ -37,7 +43,7 @@ export default function Dashboard() {
   const expiredAlertItems = expiredItems.map((item) => ({ id: item.id, name: item.name, detail: item.expiryDate, type: 'expired' as const }));
   const warningAlertItems = warningItems.map((item) => ({ id: item.id, name: item.name, detail: item.expiryDate, type: 'warning' as const }));
 
-  const totalDebt = farmers.reduce((sum, f) => sum + f.totalDebt, 0);
+  const totalDebt = farmers.reduce((sum, f) => sum + getFarmerTotalDebt(f.id, creditRecords), 0);
   const unpaidRecords = creditRecords.filter((r) => r.status !== 'paid');
   const overdueRecords = creditRecords.filter((r) => r.status !== 'paid' && isAfter(today, new Date(r.expectedPayDate)));
 
@@ -149,8 +155,6 @@ export default function Dashboard() {
     </div>
   );
 }
-
-import { ClipboardCheck } from 'lucide-react';
 
 function StatCard({ icon: Icon, label, value, color }: { icon: typeof DollarSign; label: string; value: string; color: string }) {
   const colorMap: Record<string, string> = {
