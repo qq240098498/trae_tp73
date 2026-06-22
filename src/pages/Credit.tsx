@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '@/store';
-import { Users, Plus, DollarSign, Clock, CheckCircle, X as XIcon, Search, XCircle, Edit2, Award } from 'lucide-react';
+import { Users, Plus, DollarSign, Clock, CheckCircle, X as XIcon, Search, XCircle, Edit2, Award, ShoppingCart } from 'lucide-react';
 import { format } from 'date-fns';
 import { getFarmerTotalDebt } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 export default function Credit() {
   const farmers = useStore((s) => s.farmers);
@@ -105,13 +106,22 @@ export default function Credit() {
           <h1 className="text-2xl font-bold text-surface-900">农户赊账管理</h1>
           <p className="text-sm text-surface-500 mt-1">农户档案、挂账记录、秋收后结账</p>
         </div>
-        <button
-          onClick={() => setShowAddFarmer(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          新增农户
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/sales"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gold-500 text-white rounded-lg text-sm font-medium hover:bg-gold-600 transition-colors shadow-sm"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            新增赊账
+          </Link>
+          <button
+            onClick={() => setShowAddFarmer(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            新增农户
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4 h-[calc(100vh-180px)]">
@@ -229,13 +239,22 @@ export default function Credit() {
                         ¥0.00
                       </p>
                     )}
-                    <button
-                      onClick={() => openEditFarmer(selectedFarmerData)}
-                      className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-primary-600 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      编辑农户
-                    </button>
+                    <div className="mt-2 flex items-center justify-end gap-2">
+                      <Link
+                        to={`/sales?farmerId=${selectedFarmerData.id}&source=credit`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-white bg-gold-500 rounded-md hover:bg-gold-600 transition-colors"
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5" />
+                        新增赊账
+                      </Link>
+                      <button
+                        onClick={() => openEditFarmer(selectedFarmerData)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-primary-600 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        编辑农户
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

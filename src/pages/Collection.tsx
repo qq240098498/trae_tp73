@@ -22,8 +22,10 @@ import {
   UserCheck,
   Ban,
   PhoneOff,
+  ShoppingCart,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 import type { CollectionNotice, CollectionMethod, CollectionResult } from '@/types';
 
 export default function Collection() {
@@ -266,6 +268,13 @@ export default function Collection() {
           <h1 className="text-2xl font-bold text-surface-900">赊账催收管理</h1>
           <p className="text-sm text-surface-500 mt-1">秋收前30天自动生成催收清单，跟踪催收进度</p>
         </div>
+        <Link
+          to="/sales?source=collection"
+          className="flex items-center gap-2 px-4 py-2.5 bg-gold-500 text-white rounded-lg text-sm font-medium hover:bg-gold-600 transition-colors shadow-sm"
+        >
+          <ShoppingCart className="w-4 h-4" />
+          新增赊账
+        </Link>
       </div>
 
       <div className="grid grid-cols-6 gap-4">
@@ -758,27 +767,36 @@ export default function Collection() {
                 })()}
               </div>
 
-              {selectedNoticeData.status !== 'resolved' && (
-                <div className="p-4 border-t border-surface-200 space-y-2">
-                  <button
-                    onClick={() => openAddRecord(selectedNoticeData)}
-                    className="w-full px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    记录催收
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowPayment(selectedNoticeData.creditRecordId);
-                      setPaymentAmount(selectedNoticeData.remainingAmount.toFixed(2));
-                    }}
-                    className="w-full px-4 py-2.5 bg-gold-500 text-white rounded-lg text-sm font-medium hover:bg-gold-600 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <DollarSign className="w-4 h-4" />
-                    登记还款
-                  </button>
-                </div>
-              )}
+              <div className="p-4 border-t border-surface-200 space-y-2">
+                {selectedNoticeData.status !== 'resolved' && (
+                  <>
+                    <button
+                      onClick={() => openAddRecord(selectedNoticeData)}
+                      className="w-full px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      记录催收
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPayment(selectedNoticeData.creditRecordId);
+                        setPaymentAmount(selectedNoticeData.remainingAmount.toFixed(2));
+                      }}
+                      className="w-full px-4 py-2.5 bg-gold-500 text-white rounded-lg text-sm font-medium hover:bg-gold-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      登记还款
+                    </button>
+                  </>
+                )}
+                <Link
+                  to={`/sales?farmerId=${selectedNoticeData.farmerId}&source=collection`}
+                  className="w-full px-4 py-2.5 bg-surface-100 text-surface-700 rounded-lg text-sm font-medium hover:bg-surface-200 transition-colors flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  新增赊账
+                </Link>
+              </div>
             </>
           )}
         </div>

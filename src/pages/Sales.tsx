@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '@/store';
 import type { SaleItem } from '@/types';
-import { Search, ShoppingCart, Ban, X, CreditCard, Banknote, ShieldAlert, CheckCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, ShoppingCart, Ban, X, CreditCard, Banknote, ShieldAlert, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
 
 interface CartItem extends SaleItem {
   maxQty: number;
@@ -17,6 +17,7 @@ const purposeOptions = ['病虫害防治', '除草', '杀菌', '杀虫', '调节
 
 export default function Sales() {
   const { seeds, chemicals, farmers, createSale, settings } = useStore();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'credit'>('cash');
@@ -24,8 +25,21 @@ export default function Sales() {
   const [showRegistration, setShowRegistration] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [lastOrderNumber, setLastOrderNumber] = useState('');
+  const [fromFarmer, setFromFarmer] = useState(false);
 
   const [regForm, setRegForm] = useState({ buyerName: '', idCard: '', phone: '', purpose: '' });
+
+  useEffect(() => {
+    const farmerId = searchParams.get('farmerId');
+    const source = searchParams.get('source');
+    if (farmerId && farmers.some((f) => f.id === farmerId)) {
+      setSelectedFarmerId(farmerId);
+      setPaymentMethod('credit');
+      if (source === 'credit' || source === 'collection') {
+        setFromFarmer(true);
+      }
+    }
+  }, [searchParams, farmers]);
 
   const allProducts = useMemo(() => [
     ...seeds.map((s) => ({ id: s.id, name: `${s.name} ${s.variety}`, price: s.sellingPrice, stock: s.stockQuantity, type: 'seed' as const, isPesticide: false, isRestricted: false, isExpired: s.status === 'expired', status: s.status })),
@@ -122,9 +136,28 @@ export default function Sales() {
 
   return (
     <div className="p-6 space-y-4 h-full flex flex-col">
-      <div>
-        <h1 className="text-2xl font-bold text-surface-900">销售出库</h1>
-        <p className="text-sm text-surface-500 mt-1">搜索商品、加入购物车、选择结算方式完成出库</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {fromFarmer && (
+            <Link
+              to={searchParams.get('source') === 'collection' ? '/collection' : '/credit'}
+              className="p-2 rounded-lg border border-surface-200 text-surface-600 hover:bg-surface-50 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold text-surface-900">
+              销售出库
+              {fromFarmer && selectedFarmerId && (
+                <span className="ml-3 text-sm font-normal text-gold-600 bg-gold-50 px-2 py-1 rounded">
+                  赊账给 {farmers.find((f) => f.id === selectedFarmerId)?.name}
+                </span>
+              )}
+            </h1>
+            <p className="text-sm text-surface-500 mt-1">搜索商品、加入购物车、选择结算方式完成出库</p>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 grid grid-cols-5 gap-4 min-h-0">
