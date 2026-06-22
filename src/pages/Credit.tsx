@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '@/store';
-import { Users, Plus, DollarSign, Clock, CheckCircle, X as XIcon, Search, XCircle } from 'lucide-react';
+import { Users, Plus, DollarSign, Clock, CheckCircle, X as XIcon, Search, XCircle, Edit2, Award } from 'lucide-react';
 import { format } from 'date-fns';
 import { getFarmerTotalDebt } from '@/lib/utils';
 
@@ -9,11 +9,13 @@ export default function Credit() {
   const creditRecords = useStore((s) => s.creditRecords);
   const saleOrders = useStore((s) => s.saleOrders);
   const addFarmer = useStore((s) => s.addFarmer);
+  const updateFarmer = useStore((s) => s.updateFarmer);
   const addCreditPayment = useStore((s) => s.addCreditPayment);
 
   const [search, setSearch] = useState('');
   const [selectedFarmer, setSelectedFarmer] = useState<string | null>(null);
   const [showAddFarmer, setShowAddFarmer] = useState(false);
+  const [editingFarmerId, setEditingFarmerId] = useState<string | null>(null);
   const [showPayment, setShowPayment] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [farmerForm, setFarmerForm] = useState({ name: '', phone: '', address: '', idCard: '', creditRating: 'A' as 'A' | 'B' | 'C' });
@@ -35,10 +37,27 @@ export default function Credit() {
 
   const handleAddFarmer = (e: React.FormEvent) => {
     e.preventDefault();
-    addFarmer(farmerForm);
+    if (editingFarmerId) {
+      updateFarmer(editingFarmerId, farmerForm);
+    } else {
+      addFarmer(farmerForm);
+    }
     setShowAddFarmer(false);
+    setEditingFarmerId(null);
     setFarmerForm({ name: '', phone: '', address: '', idCard: '', creditRating: 'A' });
     setRefreshKey((k) => k + 1);
+  };
+
+  const openEditFarmer = (farmer: typeof farmersWithDebt[0]) => {
+    setEditingFarmerId(farmer.id);
+    setFarmerForm({
+      name: farmer.name,
+      phone: farmer.phone,
+      address: farmer.address,
+      idCard: farmer.idCard,
+      creditRating: farmer.creditRating,
+    });
+    setShowAddFarmer(true);
   };
 
   const handlePayment = () => {
@@ -210,6 +229,13 @@ export default function Credit() {
                         ¥0.00
                       </p>
                     )}
+                    <button
+                      onClick={() => openEditFarmer(selectedFarmerData)}
+                      className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-primary-600 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      编辑农户
+                    </button>
                   </div>
                 </div>
               </div>
@@ -332,9 +358,9 @@ export default function Credit() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-surface-900">新增农户</h2>
+              <h2 className="text-lg font-bold text-surface-900">{editingFarmerId ? '编辑农户档案' : '新增农户'}</h2>
               <button
-                onClick={() => setShowAddFarmer(false)}
+                onClick={() => { setShowAddFarmer(false); setEditingFarmerId(null); }}
                 className="p-1 rounded-md hover:bg-surface-100 text-surface-400"
               >
                 <XIcon className="w-5 h-5" />
@@ -385,23 +411,57 @@ export default function Credit() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-surface-600 mb-1">信用评级</label>
-                <select
-                  value={farmerForm.creditRating}
-                  onChange={(e) =>
-                    setFarmerForm({ ...farmerForm, creditRating: e.target.value as 'A' | 'B' | 'C' })
-                  }
-                  className="w-full px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="A">A级 - 信用良好</option>
-                  <option value="B">B级 - 信用一般</option>
-                  <option value="C">C级 - 信用较差</option>
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-surface-600 flex items-center gap-1">
+                    <Award className="w-3.5 h-3.5 text-gold-500" />
+                    信用等级评判
+                  </label>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'A', label: 'A级', desc: '信用良好', color: 'primary' },
+                    { value: 'B', label: 'B级', desc: '信用一般', color: 'gold' },
+                    { value: 'C', label: 'C级', desc: '信用较差', color: 'red' },
+                  ].map((level) => (
+                    <button
+                      key={level.value}
+                      type="button"
+                      onClick={() => setFarmerForm({ ...farmerForm, creditRating: level.value as 'A' | 'B' | 'C' })}
+                      className={`p-3 rounded-lg border-2 transition-all text-center ${
+                        farmerForm.creditRating === level.value
+                          ? level.color === 'primary'
+                            ? 'border-primary-500 bg-primary-50'
+                            : level.color === 'gold'
+                            ? 'border-gold-500 bg-gold-50'
+                            : 'border-red-500 bg-red-50'
+                          : 'border-surface-200 bg-white hover:border-surface-300'
+                      }`}
+                    >
+                      <p
+                        className={`text-lg font-bold ${
+                          farmerForm.creditRating === level.value
+                            ? level.color === 'primary'
+                              ? 'text-primary-600'
+                              : level.color === 'gold'
+                              ? 'text-gold-600'
+                              : 'text-red-600'
+                            : 'text-surface-600'
+                        }`}
+                      >
+                        {level.label}
+                      </p>
+                      <p className="text-xs text-surface-500 mt-0.5">{level.desc}</p>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-surface-400 mt-2">
+                  提示：A级可赊账额度高，B级需审核，C级限制赊账
+                </p>
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddFarmer(false)}
+                  onClick={() => { setShowAddFarmer(false); setEditingFarmerId(null); }}
                   className="px-4 py-2 border border-surface-300 rounded-lg text-sm font-medium text-surface-600 hover:bg-surface-50"
                 >
                   取消
@@ -410,7 +470,7 @@ export default function Credit() {
                   type="submit"
                   className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700"
                 >
-                  确认添加
+                  {editingFarmerId ? '保存修改' : '确认添加'}
                 </button>
               </div>
             </form>
